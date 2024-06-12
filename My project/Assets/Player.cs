@@ -4,29 +4,56 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    // Start is called before the first frame update
+    public int itemCount;
+    public float jumpPower;
+    bool isJump;
+
+    AudioSource audio;
 
     Rigidbody rigid;
 
-    void Start()
+    void Awake()
     {
         rigid = GetComponent<Rigidbody>();
+        audio = GetComponent<AudioSource>();
+        isJump = false; // 점프가 안된 상태라고 가정 
     }
 
-    private void FixedUpdate()
-    {
-        if (Input.GetButtonDown("Jump"))
-        {
-            rigid.AddForce(Vector3.up * 20, ForceMode.Impulse);
-        }
-
-        Vector3 vec = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-
-        rigid.AddForce(vec, ForceMode.Impulse);
-    }
     // Update is called once per frame
-    private void OnTriggerStay(Collider other)
+
+
+    void Update()
     {
-        rigid.AddForce(Vector3.up * 2, ForceMode.Impulse);
+        if (Input.GetButtonDown("Jump") && !isJump)
+        { //isJump가 false일 때만(1회만 가능)
+            isJump = true;
+            rigid.AddForce(new Vector3(0, jumpPower, 0), ForceMode.Impulse);
+        }
+    }
+
+    void FixedUpdate() //공의 움직임 물리현상이므로 FixedUpdate사용 
+    {
+        float h = Input.GetAxisRaw("Horizontal"); //GetAxisRaw : 0, 1 ,-1로 떨어짐 
+        float v = Input.GetAxisRaw("Vertical");
+
+        rigid.AddForce(new Vector3(h, 0, v), ForceMode.Impulse);
+    }
+
+    void OnCollisionEnter(Collision collision)
+    { //공이 바닥과 닿으면 jump상태 해제 
+
+        if (collision.gameObject.name == "Floor") isJump = false;
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+
+        if (other.tag == "Item")
+        { //충돌 오브젝트가 아이템일때
+            itemCount++; // 점수 올리기 
+            audio.Play(); // 사운드 재생 
+            other.gameObject.SetActive(false); //아이템 비활성화 
+
+        }
     }
 }
